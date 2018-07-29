@@ -11,6 +11,7 @@
         <div class="section">
             <div class="wrapper clearfix">
                 <div class="wrap-box">
+
                     <div class="left-925">
                         <div class="goods-box clearfix">
                             <!-- 放大镜 -->
@@ -53,9 +54,7 @@
                                                     </span>
                                                     <div class="el-input el-input--small">
                                                         <!---->
-                                                        <input v-model="buyNum" autocomplete="off" size="small" type="text" rows="2" max="60" min="1" validateevent="true" class="el-input__inner"
-                                                            role="spinbutton" aria-valuemax="60" aria-valuemin="1" aria-valuenow="1"
-                                                            aria-disabled="false">
+                                                        <input v-model="buyNum" autocomplete="off" size="small" type="text" rows="2" max="60" min="1" validateevent="true" class="el-input__inner" role="spinbutton" aria-valuemax="60" aria-valuemin="1" aria-valuenow="1" aria-disabled="false">
                                                         <!---->
                                                         <!---->
                                                         <!---->
@@ -72,13 +71,14 @@
                                         <dd>
                                             <div id="buyButton" class="btn-buy">
                                                 <button onclick="cartAdd(this,'/',1,'/shopping.html');" class="buy">立即购买</button>
-                                                <button onclick="cartAdd(this,'/',0,'/cart.html');" class="add">加入购物车</button>
+                                                <button @click="carAdd" class="add">加入购物车</button>
                                             </div>
                                         </dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
+
                         <div id="goodsTabs" class="goods-tab bg-wrap">
                             <!-- 图钉 -->
                             <Affix>
@@ -96,6 +96,7 @@
                             <!-- 直接解析html 是有安全性问题的 -->
                             <div v-html="goodsinfo.content" class="tab-content entry" v-show="isShowDese">
                             </div>
+                            <!-- 评论 -->
                             <div class="tab-content" v-show="!isShowDese">
                                 <div class="comment-box">
                                     <div id="commentForm" name="commentForm" class="form-box">
@@ -104,54 +105,39 @@
                                         </div>
                                         <div class="conn-box">
                                             <div class="editor">
-                                                <textarea id="txtContent" name="txtContent" sucmsg=" " datatype="*10-1000" nullmsg="请填写评论内容！"></textarea>
+                                                <textarea v-model.trim="commentContent" id="txtContent" name="txtContent" sucmsg=" " datatype="*10-1000" nullmsg="请填写评论内容！"></textarea>
                                                 <span class="Validform_checktip"></span>
                                             </div>
                                             <div class="subcon">
-                                                <input id="btnSubmit" @click="error" name="submit" type="submit" value="提交评论" class="submit">
+                                                <input id="btnSubmit" @click="submintComment" name="submit" type="submit" value="提交评论" class="submit">
                                                 <span class="Validform_checktip"></span>
                                             </div>
                                         </div>
                                     </div>
                                     <ul id="commentList" class="list-box">
-                                        <p style="margin: 5px 0px 15px 69px; line-height: 42px; text-align: center; border: 1px solid rgb(247, 247, 247);">暂无评论，快来抢沙发吧！</p>
-                                        <li>
+                                        <p v-if="messageList.length==0" style="margin: 5px 0px 15px 69px; line-height: 42px; text-align: center; border: 1px solid rgb(247, 247, 247);">暂无评论，快来抢沙发吧！</p>
+                                        <li v-for="(item, index) in messageList" :key="item.id">
                                             <div class="avatar-box">
                                                 <i class="iconfont icon-user-full"></i>
                                             </div>
                                             <div class="inner-box">
                                                 <div class="info">
-                                                    <span>匿名用户</span>
-                                                    <span>2017/10/23 14:58:59</span>
+                                                    <span>{{item.user_name}}</span>
+                                                    <span>{{item.add_time | cutTime}}</span>
                                                 </div>
-                                                <p>testtesttest</p>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <div class="avatar-box">
-                                                <i class="iconfont icon-user-full"></i>
-                                            </div>
-                                            <div class="inner-box">
-                                                <div class="info">
-                                                    <span>匿名用户</span>
-                                                    <span>2017/10/23 14:59:36</span>
-                                                </div>
-                                                <p>很清晰调动单很清晰调动单</p>
+                                                <p>{{item.content}}</p>
                                             </div>
                                         </li>
                                     </ul>
+                                    <!-- 分页 -->
                                     <div class="page-box" style="margin: 5px 0px 0px 62px;">
-                                        <div id="pagination" class="digg">
-                                            <span class="disabled">« 上一页</span>
-                                            <span class="current">1</span>
-                                            <span class="disabled">下一页 »</span>
-                                        </div>
+                                        <Page :total="totalcount" :page-size="pageSize" :page-size-opts='[5,10,15,20]' placement='top' @on-change="pageChange($event)" @on-page-size-change="pageSizeChange($event)" show-elevator show-sizer />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="left-220">
                         <div class="bg-wrap nobg">
                             <div class="sidebar-box">
@@ -178,109 +164,222 @@
             </div>
         </div>
         <!-- 返回顶部 -->
-    <BackTop></BackTop>
+        <BackTop></BackTop>
+        <!-- 隐藏一个移动的商品图片 -->
+        <img class="moveImg" v-if="imglist.length!=0" style="display: none;" :src="imglist[0].original_path" alt="">
     </div>
 </template>
 
 <script>
-    // 导入放大镜组件
-    import ProductZoomer from 'vue-product-zoomer';
+// 导入放大镜组件
+import ProductZoomer from "vue-product-zoomer";
+// 导入jq
+import $ from "jquery";
 
-    export default {
-        name: "goodsinfo",
-        // 数据
-        data: function () {
-            return {
-                goodsinfo: {},
-                imglist: [],
-                hotgoodslist: [],
-                // 购买数量
-                buyNum:1,
-                // 记录显示哪个区域的变量
-                isShowDese: true,
-                // 轮播图的数据
-                images: {
-                    normal_size: []
-                },
-                // 轮播图的配置
-                zoomerOptions: {
-                    zoomFactor: 2,
-                    pane: "container-round",
-                    hoverDelay: 300,
-                    namespace: "inline-zoomer",
-                    move_by_click: true,
-                    scroll_items: 5,
-                    choosed_thumb_border_color: "#bbdefb"
+export default {
+  name: "goodsinfo",
+  // 数据
+  data: function() {
+    return {
+      goodsinfo: {},
+      imglist: [],
+      hotgoodslist: [],
+      // 购买数量
+      buyNum: 1,
+      // 记录显示哪个区域的变量
+      isShowDese: true,
+      // 轮播图的数据
+      images: {
+        normal_size: []
+      },
+      // 轮播图的配置
+      zoomerOptions: {
+        zoomFactor: 2,
+        pane: "container-round",
+        hoverDelay: 300,
+        namespace: "inline-zoomer",
+        move_by_click: true,
+        scroll_items: 5,
+        choosed_thumb_border_color: "#bbdefb"
+      },
+      // 评论相关的数据
+      //   页码
+      pageIndex: 1,
+      pageSize: 5,
+      //评论数据
+      messageList: [],
+      //总条数
+      totalcount: 0,
+      //评论内容
+      commentContent: ""
+    };
+  },
+  // 方法
+  methods: {
+    // 抽取的公共的方法 根据id 获取数据
+    getgoodsInfo() {
+      // 强制初始化
+      this.imglist = [];
+      // 清空预览图片的数组
+      this.images.normal_size = [];
 
-                }
-            }
-        },
-        // 方法
-        methods: {
-            // 抽取的公共的方法 根据id 获取数据
-            getgoodsInfo() {
-                // 强制初始化
-                this.imglist = [];
-                // 清空预览图片的数组
-                this.images.normal_size = [];
-
-                // 调接口,获取数据
-                this.axios.get(`site/goods/getgoodsinfo/${this.$route.params.id}`)
-                    .then(respose => {
-                        // console.log(respose);
-                        this.goodsinfo = respose.data.message.goodsinfo;
-                        this.imglist = respose.data.message.imglist;
-                        this.hotgoodslist = respose.data.message.hotgoodslist;
-                        // 赋值到images中
-                        this.imglist.forEach((v,i)=>{
-                            this.images.normal_size.push({
-                                id:v.id,
-                                url:v.original_path
-                            });
-                        });
-                    })
-                    .catch(error => {
-
-                    })
-            },
-            // 发表评论弹框
-            error () {
-                this.$Message.error('对方不想说话,并向你抛出了一个异常');
-            }
-        },
-        // 注册放大镜组件
-        components: {
-            ProductZoomer
-        },
-        // 生命周期函数created,在实例创建完成后被立即调用。
-        created() {
-            this.getgoodsInfo();
-        },
-        // watch观察属性 属性值改变时自动调用
-        watch: {
-            // to 新值  from 老值
-            $route(to, from) {
-                this.getgoodsInfo();
-            }
-        }
+      // 调接口,获取数据
+      this.axios
+        .get(`site/goods/getgoodsinfo/${this.$route.params.id}`)
+        .then(respose => {
+          // console.log(respose);
+          this.goodsinfo = respose.data.message.goodsinfo;
+          this.imglist = respose.data.message.imglist;
+          this.hotgoodslist = respose.data.message.hotgoodslist;
+          // 赋值到images中
+          this.imglist.forEach((v, i) => {
+            this.images.normal_size.push({
+              id: v.id,
+              url: v.original_path
+            });
+          });
+        })
+        .catch(error => {});
+    },
+    // 抽取的公共方法 获取评论信息
+    getcomments() {
+      // 商品id -> this.$route.params.id
+      // pageIndex -> 丢到data中
+      // pageSize -> 丢到data中
+      this.axios
+        .get(
+          `site/comment/getbypage/goods/${this.$route.params.id}?pageIndex=${
+            this.pageIndex
+          }&pageSize=${this.pageSize}`
+        )
+        .then(respose => {
+          //   console.log(respose);
+          // 赋值
+          this.messageList = respose.data.message;
+          this.totalcount = respose.data.totalcount;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    // 页码改变
+    pageChange(page) {
+      // console.log(page);
+      // 保存改变的页码
+      this.pageIndex = page;
+      // 重新获取数据
+      this.getcomments();
+    },
+    // 页容量改变
+    pageSizeChange(size) {
+      // console.log(size);
+      // 保存改变的页容量
+      this.pageSize = size;
+      // 重新渲染页面
+      this.getcomments();
+    },
+    // 发表评论
+    submintComment() {
+      // 判断是否为空
+      if (this.commentContent == "") {
+        // 为空
+        this.$Message.error({
+          // 提示内容
+          content: "对方不想说话,并向你抛出了一个异常",
+          // 	是否显示关闭按钮
+          closable: true
+        });
+        return;
+      }
+      // 发表评论
+      this.axios
+        .post(`site/validate/comment/post/goods/${this.$route.params.id}`, {
+          commenttxt: this.commentContent
+        })
+        .then(respose => {
+          //   console.log(respose);
+          if (respose.data.status == 0) {
+            // 成功了
+            // 提示用户
+            this.$Message.success("评论发表成功!!");
+            // 重新获取数据 去第一页
+            this.pageIndex = 1;
+            this.getcomments();
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+      // 清空评论
+      this.commentContent = "";
+    },
+    // 加入购物车
+    carAdd(){
+        // 获取按钮的位置 $ 
+        let offset = $("#buyButton .add").offset();
+        // 获取购物车的位置
+        let carOffset = $(".icon-cart").offset();
+        // 动画
+        $(".moveImg").show().addClass("move").css(offset).animate(carOffset,1000,()=>{
+            $(".moveImg").removeClass("move").hide();
+        });
+        // 修改vuex中的数据值
+        this.$store.commit("buyGood",{
+            goodId:this.$route.params.id, //商品id
+            goodNum:this.buyNum //购买的数量
+        })
     }
+  },
+  // 注册放大镜组件
+  components: {
+    ProductZoomer
+  },
+  // 生命周期函数created,在实例创建完成后被立即调用。
+  created() {
+    // 获取商品详情
+    this.getgoodsInfo();
+    // 获取评论信息
+    this.getcomments();
+  },
+  // watch观察属性 属性值改变时自动调用
+  watch: {
+    // to 新值  from 老值
+    $route(to, from) {
+      // 重新获取商品数据
+      this.getgoodsInfo();
+      //   重新获取评论数据
+      this.getcomments();
+    }
+  }
+};
 </script>
 
 <style>
 /* 导入字体图标的样式 */
 @import url("../../node_modules/font-awesome/css/font-awesome.min.css");
-.inline-zoomer-zoomer-box{
-    width: 368px;
+.inline-zoomer-zoomer-box {
+  width: 368px;
 }
-.pic-box .control-box .thumb-list{
-    display: flex;
+.pic-box .control-box .thumb-list {
+  display: flex;
 }
 .thumb-list img {
   height: 78px;
   width: 78px;
   margin: 5px;
 }
-.control i{
-    text-align: center;
+.control i {
+  text-align: center;
+}
+.moveImg {
+  width: 50px;
+  position: absolute;
+  top: 0;
+  right: 50px;
+}
+.moveImg.move {
+  transform: scale(0.5, 0.5) rotateZ(3600deg);
+  opacity: 0.4;
+  transition: transform 1s, opacity 1s;
 }
 </style>
