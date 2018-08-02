@@ -11,23 +11,24 @@
                         <a target="_blank" href="#"></a>
                     </div>
                     <div id="menu" class="right-box">
-                        <span style="display: none;">
-                            <a href="" class="">登录</a>
+                        <span v-if="$store.state.isLogin==false">
+                            <router-link to="/login">登录</router-link>
                             <strong>|</strong>
                             <a href="" class="">注册</a>
                             <strong>|</strong>
                         </span>
-                        <span>
+                        <span v-if="$store.state.isLogin">
                             <a href="" class="">会员中心</a>
                             <strong>|</strong>
-                            <a>退出</a>
+                            <a @click="logout">退出</a>
                             <strong>|</strong>
                         </span>
-                        <a href="" class="">
+                        <router-link to="/buyCar">
                             <i class="iconfont icon-cart"></i>购物车(
                             <span id="shoppingCartCount">
                                 <span>{{this.$store.getters.totalCount}}</span>
-                            </span>)</a>
+                            </span>)
+                        </router-link>
                     </div>
                 </div>
             </div>
@@ -118,40 +119,78 @@
 </template>
 
 <script>
-    // 导入jquery 模块
-    import $ from 'jquery';
+// 导入jquery 模块
+import $ from "jquery";
 
-    export default {
-        // 生命周期钩子
-        mounted() {
-            $("#menu2 li a").wrapInner('<span class="out"></span>');
-            $("#menu2 li a").each(function () {
-                $('<span class="over">' + $(this).text() + '</span>').appendTo(this);
-            });
+export default {
+  // 生命周期钩子
+  mounted() {
+    $("#menu2 li a").wrapInner('<span class="out"></span>');
+    $("#menu2 li a").each(function() {
+      $('<span class="over">' + $(this).text() + "</span>").appendTo(this);
+    });
 
-            $("#menu2 li a").hover(function () {
-                $(".out", this).stop().animate({
-                    'top': '48px'
-                }, 300); // move down - hide
-                $(".over", this).stop().animate({
-                    'top': '0px'
-                }, 300); // move down - show
-
-            }, function () {
-                $(".out", this).stop().animate({
-                    'top': '0px'
-                }, 300); // move up - show
-                $(".over", this).stop().animate({
-                    'top': '-48px'
-                }, 300); // move up - hide
-            });
-
-        },
-    };
+    $("#menu2 li a").hover(
+      function() {
+        $(".out", this)
+          .stop()
+          .animate(
+            {
+              top: "48px"
+            },
+            300
+          ); // move down - hide
+        $(".over", this)
+          .stop()
+          .animate(
+            {
+              top: "0px"
+            },
+            300
+          ); // move down - show
+      },
+      function() {
+        $(".out", this)
+          .stop()
+          .animate(
+            {
+              top: "0px"
+            },
+            300
+          ); // move up - show
+        $(".over", this)
+          .stop()
+          .animate(
+            {
+              top: "-48px"
+            },
+            300
+          ); // move up - hide
+      }
+    );
+  },
+  methods:{
+      logout(){
+          this.axios.get('site/account/logout')
+          .then(response=>{
+            //   console.log(response);
+              if(response.data.status == 0){
+                  this.$Message.success(response.data.message);
+                //   跳页面
+                this.$router.push('/');
+                // 修改vuex中的值
+                this.$store.commit('changeLogin',false);
+              }
+          })
+          .catch(err=>{
+              console.log(err);
+          })
+      }
+  }
+};
 </script>
 
 <style>
-    /* 标准的 css中导入其他css的语法 */
-    @import url('./assets/lib/hoverNav/css/style.css');
-
+/* 标准的 css中导入其他css的语法 */
+@import url("./assets/lib/hoverNav/css/style.css");
 </style>
