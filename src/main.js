@@ -2,18 +2,26 @@ import Vue from 'vue';
 import App from './App.vue';
 // 引入路由模块
 import VueRouter from 'vue-router';
-// 引入index组件
+// 引入 首页 组件
 import index from './components/index.vue';
-// 引入goodsInfo组件
+// 引入 商品详情 组件
 import goodsInfo from './components/goodsinfo.vue';
-// 引入buyCar组件
+// 引入 购物车 组件
 import buyCar from './components/buyCar.vue';
-// 引入payOrder组件
+// 引入 订单支付 组件
 import payOrder from './components/payOrder.vue';
-// 引入login组件
+// 引入 登录 组件
 import login from './components/login.vue';
-// 引入orderInfo组件
+// 引入 订单详情 组件
 import orderInfo from './components/orderInfo.vue';
+// 引入 支付成功页 组件
+import paySuccess from './components/paySuccess.vue';
+// 引入 会员中心 组件
+import personalCenter from './components/personalCenter.vue';
+// 引入 交易订单 组件
+import orderCenter from './components/orderCenter.vue';
+// 引入 订单详情 组件
+import lookOrder from './components/lookOrder.vue';
 
 // 导入 element ui框架
 import ElementUI from 'element-ui';
@@ -83,7 +91,11 @@ const router = new VueRouter({
       // 订单支付路由
       // 动态路由匹配
       path: '/payOrder/:ids',
-      component: payOrder
+      component: payOrder,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
     },
     {
       // 登录路由
@@ -93,17 +105,62 @@ const router = new VueRouter({
     // 订单详情路由
     {
       path: "/orderInfo/:orderid",
-      component: orderInfo
-    }
+      component: orderInfo,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
+    },
+    // 支付成功页
+    {
+      path: "/paySuccess",
+      component: paySuccess,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
+    },
+    // 会员中心
+    {
+      path: "/personalCenter",
+      component: personalCenter,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
+    },
+    // 交易订单
+    {
+      path: "/orderCenter",
+      component: orderCenter,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
+    },
+    // 订单详情
+    {
+      path: "/lookOrder/:orderId",
+      component: lookOrder,
+      // 路由元信息
+      meta: {
+        checkLogin: true
+      }
+    },
   ]
 });
 
 // 注册全局过滤器
-Vue.filter('cutTime', function (value) {
-  // 默认的切割方式 不够通用
-  // return value.slice(0,10);
-  // 使用moment.js进行替换
-  return moment(value).format("YYYY年MM日DD日");
+// 支持自定义规则
+Vue.filter('cutTime', function (value,myFormat) {
+  if(myFormat){
+    return moment(value).format(myFormat);
+  }else{
+    // 默认的切割方式 不够通用
+    // return value.slice(0,10);
+    // 使用moment.js进行替换
+    return moment(value).format("YYYY年MM日DD日");
+  }
 })
 
 // 判断数据是否存在
@@ -173,8 +230,10 @@ router.beforeEach((to, from, next) => {
   // 保存来时的路由
   store.commit('saveFromPath', from.path);
   // from 从哪来 to 去哪里 next()下一个 indexOf 如果要检索的字符串值没有出现，则该方法返回 -1。
-  // 封装判读登录逻辑,方便调用验证
-  function islogin() {
+  // 判断去 下订单页
+  // if (to.path.indexOf('/payOrder') != -1) {
+  // 使用路由元信息进行判断
+  if (to.meta.checkLogin) {
     axios.get("site/account/islogin")
       .then(response => {
         if (response.data.code == "nologin") {
@@ -188,19 +247,10 @@ router.beforeEach((to, from, next) => {
       .catch(err => {
         console.log(err);
       })
-  }
-  // 判断去 下订单页
-  if (to.path.indexOf('/payOrder') != -1) {
-    islogin();
   } else {
     next();
   }
-  // // 判断去 购物车
-  // if(to.path==('/buyCar')){
-  //   islogin();
-  // }else{
-  //   next();
-  // }
+
 })
 
 Vue.config.productionTip = false
